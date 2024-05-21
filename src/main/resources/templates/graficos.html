@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Administração de Links</title>
+
+    <link rel="stylesheet" href="/webjars/jquery-ui/1.12.1/jquery-ui.min.css">
+    <!-- Adicionando a CDN do Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/webjars/jquery-ui/1.12.1/jquery-ui.min.css">
+    <style>
+        #sortable {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+    
+        iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 20px; /* Bordas arredondadas */
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.5); /* Sombra */
+        transition: box-shadow 0.3s ease; /* Efeito de transição suave */
+    }
+
+    /* Adicionando efeito de elevação quando o iframe está em foco */
+    iframe:focus {
+        outline: none;
+        box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.2); /* Sombra mais pronunciada */
+    }
+
+    #sortable li {
+        width: calc(100% / 3);
+        height: 800px;
+        box-sizing: border-box;
+        padding: 25px;
+        text-align: center;
+        flex: 0 0 calc(100% / var(--iframe-per-row, 3));
+        margin-bottom: 20px; /* Adicionando espaçamento na parte inferior */
+    }
+
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar Bootstrap -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Usina Rio Pardo</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                <!-- Seus outros itens de navegação aqui -->
+            </ul>
+            <ul class="navbar-nav">
+                <!-- Botão de Logout -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Sair</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container mt-5">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="hideButton">
+            <i class="fas fa-chevron-up"></i> Ocultar                   
+        </button>
+        <div class="row">
+            <div class="col">
+                <h1 style="text-align: center;">Gráficos</h1>
+            </div>
+            <div class="col text-right">
+            </div>
+        </div>
+
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-6 text-center">
+                <!-- Adicionado 'text-center' para centralizar o conteúdo -->
+                <label for="iframePerRow">Quantidade Graficos por linha:</label>
+                <select id="iframePerRow" class="form-control shadow-sm rounded">
+                    <option value="1">1 - Grafico por Linha</option>
+                    <option value="2">2 - Grafico por Linha</option>
+                    <option value="3">3 - Grafico por Linha</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button type="button" class="btn btn-outline-secondary btn-sm" id="showButton">
+    <i class="fas fa-chevron-up"></i> Exibir
+</button>
+
+    <br>
+
+    <ul id="sortable">
+        <li th:each="link : ${links}" class="ui-state-default" data-id="${link.id}">
+            <iframe title="teste" width="600" th:attr="src=${link.url}" frameborder="0" allowFullScreen="true"></iframe>
+            <span th:text="${link.nome}"></span>
+        </li>
+    </ul>
+
+
+    <script src="/webjars/jquery/3.6.0/jquery.min.js"></script>
+    <script src="/webjars/jquery-ui/1.12.1/jquery-ui.min.js"></script>
+
+    <!-- Adicionando os scripts do Bootstrap -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            var savedOrder = localStorage.getItem('linkOrder');
+            if (savedOrder) {
+                var orderArray = savedOrder.split(',');
+                var sortedList = $("#sortable li").sort(function (a, b) {
+                    var aId = $(a).data('id');
+                    var bId = $(b).data('id');
+                    return orderArray.indexOf(aId.toString()) - orderArray.indexOf(bId.toString());
+                });
+                $("#sortable").append(sortedList);
+            }
+
+            $("#sortable").sortable({
+                axis: 'xy', // Permitir movimentos tanto horizontais quanto verticais
+                update: function (event, ui) {
+                    adjustColumns(); // Chamada da função para ajustar as colunas
+                }
+            });
+            $("#sortable").disableSelection();
+
+            $('#iframePerRow').change(function () {
+                adjustColumns(); // Chamada da função para ajustar as colunas
+            }).trigger('change');
+
+            function adjustColumns() {
+                var iframesPerRow = $('#iframePerRow').val();
+                var totalItems = $("#sortable li").length;
+                var itemsPerRow = Math.min(iframesPerRow, totalItems);
+
+                var flexBasis = (100 / itemsPerRow) + '%';
+
+                // Ajustando a altura com base na seleção do usuário
+                var newHeight = 800 / itemsPerRow +
+                    'px'; // Dividindo a altura padrão pelo número de iframes por linha
+                $("#sortable li").css({
+                    'flex-basis': flexBasis,
+                    'height': newHeight // Definindo a nova altura
+                });
+            }
+        });
+    </script>
+
+    <script>
+        // Função para ocultar a mensagem após alguns segundos
+        function hideMessage() {
+            $(".alert").fadeOut(7000); // Desaparece em 3 segundos (3000 milissegundos)
+        }
+
+        // Chamada da função assim que a página carrega
+        $(document).ready(function () {
+            hideMessage();
+        });
+    </script>
+
+<script>
+    $(document).ready(function () {
+        $('#hideButton').click(function () {
+            $('.container').hide();
+        });
+
+        $('#showButton').click(function () {
+            $('.container').show();
+        });
+    });
+</script>
+
+
+
+</body>
+
+</html>

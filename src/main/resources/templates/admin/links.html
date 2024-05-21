@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Administração de Links</title>
+
+    <link rel="stylesheet" href="/webjars/jquery-ui/1.12.1/jquery-ui.min.css">
+    <!-- Adicionando a CDN do Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/webjars/jquery-ui/1.12.1/jquery-ui.min.css">
+    <style>
+        #sortable {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+
+        #sortable li {
+            width: calc(100% / 3);
+            /* Por padrão, 3 iframes por linha */
+            height: 800px;
+            /* Altura padrão */
+            box-sizing: border-box;
+            padding: 15px;
+            text-align: center;
+            flex: 0 0 calc(100% / var(--iframe-per-row, 3));
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar Bootstrap -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Usina Rio Pardo</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <!-- Menu suspenso -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Admin
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="/admin/novo">Cadastrar Usuário</a>
+                        <a class="dropdown-item" href="/cadastro">Cadastro de Permissões</a>
+                        <a class="dropdown-item" href="/admin/listarGraficos">Excluir Gráficos</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="/admin/links">Inserir Gráficos</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <!-- Botão de Logout -->
+        <div class="ml-auto">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Sair</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+
+
+    <div class="container mt-5">
+
+        <h1 style="text-align: center;">Administração de Links</h1>
+
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-6 text-center">
+                <!-- Adicionado 'text-center' para centralizar o conteúdo -->
+                <label for="iframePerRow">Graficos por linha:</label>
+                <select id="iframePerRow" class="form-control shadow-sm rounded">
+                    <option value="1">1 - Grafico por Linha</option>
+                    <option value="2">2 - Grafico por Linha</option>
+                    <option value="3">3 - Grafico por Linha</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form action="/admin/links/add" method="post" class="border p-4 rounded">
+                    <div class="form-group">
+                        <label for="nome">Nome:</label>
+                        <input type="text" name="nome" id="nome" class="form-control shadow" placeholder="Nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="url">URL:</label>
+                        <input type="text" name="url" id="url" class="form-control shadow" placeholder="URL" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="roles">Permissão de Acesso:</label>
+                        <select name="roles" id="roles" class="form-control shadow" placeholder="Selecione uma permissão de acesso" required>
+                            <option th:each="role : ${roles}" th:value="${role.id}" th:text="${role.nome}"></option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <a href="/admin/listarGraficos" class="btn btn-secondary">Listar Gráficos</a>
+
+                    <!-- Mensagem de sucesso -->
+                   
+                    <div th:if="${alerta eq 'sucesso'}" class="alert alert-success" role="alert">
+                        <strong th:text="${titulo}"></strong>
+                        <p th:text="${texto}"></p>
+                    </div>
+
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <br>
+    <br>
+
+    <ul id="sortable">
+        <li th:each="link : ${links}" class="ui-state-default" data-id="${link.id}">
+            <iframe title="teste" width="600" th:attr="src=${link.url}" frameborder="0" allowFullScreen="true"></iframe>
+            <span th:text="${link.nome}"></span>
+        </li>
+    </ul>
+
+
+
+
+    <script src="/webjars/jquery/3.6.0/jquery.min.js"></script>
+    <script src="/webjars/jquery-ui/1.12.1/jquery-ui.min.js"></script>
+
+    <!-- Adicionando os scripts do Bootstrap -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            var savedOrder = localStorage.getItem('linkOrder');
+            if (savedOrder) {
+                var orderArray = savedOrder.split(',');
+                var sortedList = $("#sortable li").sort(function (a, b) {
+                    var aId = $(a).data('id');
+                    var bId = $(b).data('id');
+                    return orderArray.indexOf(aId.toString()) - orderArray.indexOf(bId.toString());
+                });
+                $("#sortable").append(sortedList);
+            }
+
+            $("#sortable").sortable({
+                axis: 'xy', // Permitir movimentos tanto horizontais quanto verticais
+                update: function (event, ui) {
+                    adjustColumns(); // Chamada da função para ajustar as colunas
+                }
+            });
+            $("#sortable").disableSelection();
+
+            $('#iframePerRow').change(function () {
+                adjustColumns(); // Chamada da função para ajustar as colunas
+            }).trigger('change');
+
+            function adjustColumns() {
+                var iframesPerRow = $('#iframePerRow').val();
+                var totalItems = $("#sortable li").length;
+                var itemsPerRow = Math.min(iframesPerRow, totalItems);
+
+                var flexBasis = (100 / itemsPerRow) + '%';
+
+                // Ajustando a altura com base na seleção do usuário
+                var newHeight = 800 / itemsPerRow +
+                    'px'; // Dividindo a altura padrão pelo número de iframes por linha
+                $("#sortable li").css({
+                    'flex-basis': flexBasis,
+                    'height': newHeight // Definindo a nova altura
+                });
+            }
+        });
+    </script>
+
+    <script>
+        // Função para ocultar a mensagem após alguns segundos
+        function hideMessage() {
+            $(".alert").fadeOut(7000); // Desaparece em 3 segundos (3000 milissegundos)
+        }
+
+        // Chamada da função assim que a página carrega
+        $(document).ready(function () {
+            hideMessage();
+        });
+    </script>
+
+
+</body>
+
+</html>

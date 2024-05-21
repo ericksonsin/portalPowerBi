@@ -1,0 +1,21 @@
+/* CSS existente */
+#sortable {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+#sortable li {
+    width: calc(100% / 3); /* Por padrão, 3 imagens por linha */
+    box-sizing: border-box;
+    padding: 15px;
+    text-align: center;
+}
+
+/* Adicione este CSS para ajustar o layout com base na escolha do usuário */
+#sortable li {
+    flex: 0 0 calc(100% / var(--image-per-row, 3));
+}

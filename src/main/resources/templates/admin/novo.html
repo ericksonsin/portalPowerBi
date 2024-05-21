@@ -1,0 +1,197 @@
+<!-- new_user.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Cadastrar Usuário</title>
+
+    <link rel="stylesheet" href="/webjars/jquery-ui/1.12.1/jquery-ui.min.css">
+    <!-- Adicionando a CDN do Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        #pagination li {
+            margin-right: 5px;
+            /* Espaçamento à direita de cada item da paginação */
+            border: 1;
+        }
+
+        #pagination a {
+            font-weight: bold;
+            /* Deixa o texto em negrito */
+        }
+
+        .form-bordered {
+            border: 2px solid gray;
+            padding: 20px;
+            border-radius: 8px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+   <!-- Navbar Bootstrap -->
+   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Usina Rio Pardo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <!-- Menu suspenso -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Admin
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="/admin/novo">Cadastrar Usuário</a>
+                    <a class="dropdown-item" href="/cadastro">Cadastro de Permissões</a>
+                    <a class="dropdown-item" href="/admin/listarGraficos">Excluir Gráficos</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="/admin/links">Inserir Gráficos</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+    <!-- Botão de Logout -->
+    <div class="ml-auto">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="/logout">Sair</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h1 class="mb-4">Cadastrar Usuário</h1>
+
+                <form th:action="@{/admin/save}" th:object="${usuario}" method="post"
+                    class="needs-validation form-bordered">
+                    <input type="hidden" th:field="*{id}" />
+
+                    <div class="form-group">
+                        <label for="nome">Nome</label>
+                        <input type="text" name="nome" class="form-control shadow" id="nome" th:value="*{nome}"
+                            required>
+                        <div class="invalid-feedback">Por favor, insira um nome válido.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" name="email" class="form-control shadow" id="email" th:value="*{email}"
+                            required>
+                        <div class="invalid-feedback">Por favor, insira um email válido.</div>
+                    </div>
+
+                    <!-- Senha não deve ser preenchida automaticamente por questões de segurança -->
+                    <div class="form-group">
+                        <label for="senha">Senha</label>
+                        <input type="password" name="senha" class="form-control shadow" id="senha" required>
+                        <div class="invalid-feedback">Por favor, insira uma senha válida.</div>
+                    </div>
+
+                    <!-- Role (Permissão de Acesso) - exemplo de campo extra -->
+                    <div class="form-group">
+                        <label for="roles">Permissão de Acesso</label>
+                        <select name="roles" id="roles" class="form-control shadow" multiple required>
+                            <option th:each="role : ${roles}" th:value="${role.id}" th:text="${role.nome}"></option>
+                        </select>
+                        <div class="invalid-feedback">Por favor, selecione pelo menos uma permissão de acesso.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" th:if="${not (isEditing ?: false)}">Salvar</button>
+
+                    <div th:if="${alerta eq 'sucesso'}" class="alert alert-success" role="alert">
+                        <strong th:text="${titulo}"></strong>
+                        <p th:text="${texto}"></p>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <h2>Tabela de Usuarios</h2>
+
+                <!-- Barra de Pesquisa -->
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Pesquisar...">
+                    </div>
+                </div>
+
+
+                <br>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" style="width: 100%">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Permissão de Acesso</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTable">
+                            <tr th:each="user : ${usuarios}">
+                                <td th:text="${user.nome}"></td>
+                                <td th:text="${user.email}"></td>
+                                <td>
+                                    <ul>
+                                        <li th:each="role : ${user.roles}" th:text="${role.nome}"></li>
+                                    </ul>
+                                </td>
+                                <td>
+                                    <a th:href="@{'/admin/edit/' + ${user.id}}"
+                                        class="btn btn-warning btn-sm">Editar</a>
+                                    <a th:href="@{'/admin/delete/' + ${user.id}}"
+                                        class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir este usuário?')">Excluir</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <nav>
+                        <ul class="pagination justify-content-center" id="pagination">
+                            <!-- Os links de paginação serão inseridos aqui -->
+                        </ul>
+                    </nav>
+
+                </div>
+            </div>
+        </div>
+
+        <script th:src="@{/js/novoUsuario.js(v=${version})}" th:fragment="js"></script>
+
+        <!-- Adicionando os scripts do Bootstrap -->
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+        <script>
+            // Função para ocultar a mensagem após alguns segundos
+            function hideMessage() {
+                $(".alert").fadeOut(7000); // Desaparece em 3 segundos (3000 milissegundos)
+            }
+    
+            // Chamada da função assim que a página carrega
+            $(document).ready(function () {
+                hideMessage();
+            });
+        </script>
+
+
+</body>
+
+</html>
